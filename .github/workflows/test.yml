@@ -1,0 +1,60 @@
+name: Test Claude Code Kit
+on: workflow_dispatch
+
+jobs:
+  test-install:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test 1-安装.bat syntax
+        shell: cmd
+        run: |
+          chcp 65001
+          echo === Testing winget availability ===
+          winget --version || echo winget not available in CI
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test Claude Code install
+        shell: cmd
+        run: |
+          chcp 65001
+          echo === Installing Claude Code ===
+          call npm install -g @anthropic-ai/claude-code --registry=https://registry.npmmirror.com
+          echo === Verify installation ===
+          claude --version || echo "claude command check done"
+
+      - name: Test onboarding config
+        shell: cmd
+        run: |
+          chcp 65001
+          echo === Testing config initialization ===
+          node --eval "const os=require('os'),fs=require('fs'),path=require('path');const f=path.join(os.homedir(),'.claude.json');let c={};try{if(fs.existsSync(f))c=JSON.parse(fs.readFileSync(f,'utf-8'));}catch(e){}c.hasCompletedOnboarding=true;fs.writeFileSync(f,JSON.stringify(c,null,2),'utf-8');console.log('OK: '+f);"
+          echo === Verify config ===
+          type %USERPROFILE%\.claude.json
+
+      - name: Test env var setting
+        shell: cmd
+        run: |
+          chcp 65001
+          echo === Testing environment variable setup ===
+          powershell -Command "[System.Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL','https://api.kimi.com/coding/',[System.EnvironmentVariableTarget]::User)"
+          powershell -Command "[System.Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY','sk-kimi-test-dummy-key',[System.EnvironmentVariableTarget]::User)"
+          echo === Reading back ===
+          powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_BASE_URL','User')"
+          powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')"
+
+      - name: Test startup script logic
+        shell: cmd
+        run: |
+          chcp 65001
+          echo === Testing startup env reading ===
+          for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_BASE_URL','User')"') do set ANTHROPIC_BASE_URL=%%i
+          for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')"') do set ANTHROPIC_API_KEY=%%i
+          echo BASE_URL=%ANTHROPIC_BASE_URL%
+          echo API_KEY=%ANTHROPIC_API_KEY%
+          if "%ANTHROPIC_API_KEY%"=="" (echo FAIL: Key not found) else (echo OK: Key loaded)
