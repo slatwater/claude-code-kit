@@ -19,7 +19,7 @@ jobs:
           echo === winget check ===
           winget --version || echo winget not available
 
-      - name: Install Node.js via setup-node
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -55,10 +55,9 @@ jobs:
             echo FAIL: config init failed
             exit /b 1
           )
-          echo === Verify config file ===
           type %USERPROFILE%\.claude.json
 
-      - name: Test - Set env vars (simulates 2-设置密钥.bat)
+      - name: Test - Set env vars (simulates key setup script)
         shell: cmd
         run: |
           chcp 65001
@@ -74,7 +73,7 @@ jobs:
           )
           echo OK: env vars set
 
-      - name: Test - Read env vars back (simulates 3-启动.bat)
+      - name: Test - Read env vars back (simulates startup script)
         shell: cmd
         run: |
           chcp 65001
@@ -91,58 +90,27 @@ jobs:
           )
           echo OK: all env vars loaded
 
-      - name: Test - Full 1-安装.bat script syntax check
-        shell: powershell
-        run: |
-          # Verify BOM header exists on all .bat files
-          $batFiles = Get-ChildItem -Filter "*.bat"
-          foreach ($f in $batFiles) {
-            $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
-            if ($bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) {
-              Write-Error "FAIL: $($f.Name) missing UTF-8 BOM"
-              exit 1
-            }
-            Write-Host "OK: $($f.Name) has UTF-8 BOM"
-          }
-          # Verify 使用说明.txt BOM too
-          $txt = Get-Item "使用说明.txt"
-          $bytes = [System.IO.File]::ReadAllBytes($txt.FullName)
-          if ($bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) {
-            Write-Error "FAIL: 使用说明.txt missing UTF-8 BOM"
-            exit 1
-          }
-          Write-Host "OK: 使用说明.txt has UTF-8 BOM"
-
-      - name: Test - Run 1-安装.bat (with node pre-installed)
+      - name: Test - Verify UTF-8 BOM on all files
         shell: cmd
         run: |
           chcp 65001
-          echo === Running install script (node already available, should skip to claude install) ===
-          echo.
-          
-          :: Simulate what the script does (minus winget and pause)
-          where winget >nul 2>nul
-          if %errorlevel% neq 0 (
-            echo NOTE: winget not in CI, testing node/claude path only
-          )
-          
+          node -e "const fs=require('fs'),path=require('path');const files=fs.readdirSync('.').filter(f=>f.endsWith('.bat')||f.endsWith('.txt'));let ok=true;for(const f of files){const buf=fs.readFileSync(f);if(buf[0]!==0xEF||buf[1]!==0xBB||buf[2]!==0xBF){console.error('FAIL: '+f+' missing UTF-8 BOM');ok=false;}else{console.log('OK: '+f+' has UTF-8 BOM');}}if(!ok)process.exit(1);console.log('All files have BOM.');"
+
+      - name: Test - Verify claude is runnable
+        shell: cmd
+        run: |
+          chcp 65001
           where node >nul 2>nul
-          if %errorlevel% equ 0 (
-            echo OK: Node.js detected, version:
-            node --version
-          ) else (
-            echo FAIL: Node.js should be available
+          if %errorlevel% neq 0 (
+            echo FAIL: node not found
             exit /b 1
           )
-          
+          echo OK: Node.js available
           where claude >nul 2>nul
-          if %errorlevel% equ 0 (
-            echo OK: Claude Code detected
-            claude --version
-          ) else (
-            echo FAIL: Claude Code should be available
+          if %errorlevel% neq 0 (
+            echo FAIL: claude not found
             exit /b 1
           )
-          
-          echo.
-          echo === All checks passed ===
+          echo OK: Claude Code available
+          claude --version
+          echo === All tests passed ===
