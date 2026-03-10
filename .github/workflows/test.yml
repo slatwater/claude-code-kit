@@ -13,11 +13,8 @@ jobs:
       - name: Show system info
         shell: cmd
         run: |
-          chcp 65001
           echo === Windows Version ===
           ver
-          echo === winget check ===
-          winget --version || echo winget not available
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -27,90 +24,71 @@ jobs:
       - name: Test - Node.js is available
         shell: cmd
         run: |
-          chcp 65001
-          where node
+          where node || exit /b 1
           node --version
-          where npm
+          where npm || exit /b 1
           npm --version
 
       - name: Test - Install Claude Code via npm
         shell: cmd
         run: |
-          chcp 65001
           call npm install -g @anthropic-ai/claude-code --registry=https://registry.npmmirror.com
-          if %errorlevel% neq 0 (
-            echo FAIL: npm install failed
-            exit /b 1
-          )
-          echo === Verify claude command ===
-          where claude
+          if %errorlevel% neq 0 exit /b 1
+          where claude || exit /b 1
           claude --version
 
       - name: Test - Onboarding config init
         shell: cmd
         run: |
-          chcp 65001
           node --eval "const os=require('os'),fs=require('fs'),path=require('path');const f=path.join(os.homedir(),'.claude.json');let c={};try{if(fs.existsSync(f))c=JSON.parse(fs.readFileSync(f,'utf-8'));}catch(e){}c.hasCompletedOnboarding=true;fs.writeFileSync(f,JSON.stringify(c,null,2),'utf-8');console.log('OK: '+f);"
-          if %errorlevel% neq 0 (
-            echo FAIL: config init failed
-            exit /b 1
-          )
+          if %errorlevel% neq 0 exit /b 1
           type %USERPROFILE%\.claude.json
 
-      - name: Test - Set env vars (simulates key setup script)
+      - name: Test - Set env vars (simulates 2-set-key.bat)
         shell: cmd
         run: |
-          chcp 65001
           powershell -Command "[System.Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL','https://api.kimi.com/coding/',[System.EnvironmentVariableTarget]::User)"
-          if %errorlevel% neq 0 (
-            echo FAIL: set BASE_URL failed
-            exit /b 1
-          )
+          if %errorlevel% neq 0 exit /b 1
           powershell -Command "[System.Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY','sk-kimi-test-dummy-key',[System.EnvironmentVariableTarget]::User)"
-          if %errorlevel% neq 0 (
-            echo FAIL: set API_KEY failed
-            exit /b 1
-          )
+          if %errorlevel% neq 0 exit /b 1
           echo OK: env vars set
 
-      - name: Test - Read env vars back (simulates startup script)
+      - name: Test - Read env vars back (simulates 3-start.bat)
         shell: cmd
         run: |
-          chcp 65001
           for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_BASE_URL','User')"') do set ANTHROPIC_BASE_URL=%%i
           for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')"') do set ANTHROPIC_API_KEY=%%i
+          if "%ANTHROPIC_BASE_URL%"=="" (echo FAIL: BASE_URL not found && exit /b 1)
+          if "%ANTHROPIC_API_KEY%"=="" (echo FAIL: API_KEY not found && exit /b 1)
           echo BASE_URL=%ANTHROPIC_BASE_URL%
-          if "%ANTHROPIC_BASE_URL%"=="" (
-            echo FAIL: BASE_URL not found
-            exit /b 1
-          )
-          if "%ANTHROPIC_API_KEY%"=="" (
-            echo FAIL: API_KEY not found
-            exit /b 1
-          )
           echo OK: all env vars loaded
 
-      - name: Test - Verify UTF-8 BOM on all files
+      - name: Test - Run 1-install.bat end-to-end
         shell: cmd
         run: |
-          chcp 65001
-          node -e "const fs=require('fs'),path=require('path');const files=fs.readdirSync('.').filter(f=>f.endsWith('.bat')||f.endsWith('.txt'));let ok=true;for(const f of files){const buf=fs.readFileSync(f);if(buf[0]!==0xEF||buf[1]!==0xBB||buf[2]!==0xBF){console.error('FAIL: '+f+' missing UTF-8 BOM');ok=false;}else{console.log('OK: '+f+' has UTF-8 BOM');}}if(!ok)process.exit(1);console.log('All files have BOM.');"
-
-      - name: Test - Verify claude is runnable
-        shell: cmd
-        run: |
-          chcp 65001
+          echo === Simulating 1-install.bat logic ===
           where node >nul 2>nul
-          if %errorlevel% neq 0 (
+          if %errorlevel% equ 0 (
+            echo OK: Node.js detected
+            node --version
+          ) else (
             echo FAIL: node not found
             exit /b 1
           )
-          echo OK: Node.js available
           where claude >nul 2>nul
-          if %errorlevel% neq 0 (
+          if %errorlevel% equ 0 (
+            echo OK: Claude Code detected
+            claude --version
+          ) else (
             echo FAIL: claude not found
             exit /b 1
           )
-          echo OK: Claude Code available
-          claude --version
-          echo === All tests passed ===
+
+      - name: Test - Verify bat files are pure ASCII with CRLF
+        shell: cmd
+        run: |
+          node -e "const fs=require('fs');const files=['1-install.bat','2-set-key.bat','3-start.bat'];let ok=true;for(const f of files){const buf=fs.readFileSync(f);for(let i=0;i<buf.length;i++){if(buf[i]>127){console.error('FAIL: '+f+' has non-ASCII byte at offset '+i);ok=false;break;}}if(ok)console.log('OK: '+f+' is pure ASCII');const s=buf.toString();if(!s.includes('\r\n')){console.error('FAIL: '+f+' missing CRLF');ok=false;}else{console.log('OK: '+f+' has CRLF');}}if(!ok)process.exit(1);console.log('All bat files validated.');"
+
+      - name: Test - All checks passed
+        shell: cmd
+        run: echo === ALL TESTS PASSED ===

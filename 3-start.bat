@@ -1,34 +1,33 @@
-﻿@echo off
-chcp 65001 >nul 2>nul
+@echo off
 title Claude Code
 echo.
-echo 正在启动 Claude Code...
-echo （使用 Kimi Code 模型，国内直连）
+echo Starting Claude Code...
+echo (Using Kimi API - direct connection)
 echo.
 
-:: 读取环境变量
+:: Load environment variables
 for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_BASE_URL','User')"') do set ANTHROPIC_BASE_URL=%%i
 for /f "tokens=*" %%i in ('powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')"') do set ANTHROPIC_API_KEY=%%i
 
 if "%ANTHROPIC_API_KEY%"=="" (
-    echo [错误] 未找到 API Key。
-    echo 请先运行「2-设置密钥.bat」配置密钥。
+    echo [ERROR] API Key not found.
+    echo Please run 2-set-key.bat first.
     echo.
-    echo 按任意键退出...
+    echo Press any key to exit...
     pause >nul
     exit
 )
 
-:: 检查 claude 命令
+:: Check claude command
 where claude >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [错误] 未找到 claude 命令。
-    echo 请先运行「1-安装.bat」安装 Claude Code。
+    echo [ERROR] claude command not found.
+    echo Please run 1-install.bat first.
     echo.
-    echo 按任意键退出...
+    echo Press any key to exit...
     pause >nul
     exit
 )
 
-:: 启动
+:: Launch
 claude

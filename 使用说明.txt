@@ -1,54 +1,53 @@
-﻿﻿╔══════════════════════════════════════╗
-║   Claude Code 一键包 - 使用说明     ║
-╚══════════════════════════════════════╝
+﻿========================================
+  Claude Code 一键安装包 - 使用说明
+========================================
 
 【前提条件】
 
   - Windows 10 (1809+) 或 Windows 11
   - 能正常上网（不需要翻墙）
-  - 一个 Kimi API Key（会员页面获取）
+  - Kimi API Key（kimi.com 会员页面获取）
 
 【首次使用】
 
-  第一步：双击「1-安装.bat」
-         → 等待安装 Git 和 Node.js（可能需要几分钟）
-         → 安装完成后关闭窗口
-         → 重新双击「1-安装.bat」继续安装 Claude Code
+  第一步：双击 1-install.bat
+         等待安装 Git 和 Node.js
+         安装完成后关闭窗口
+         重新双击 1-install.bat 继续安装 Claude Code
 
-  第二步：双击「2-设置密钥.bat」
-         → 粘贴你的 Kimi API Key
-         → API Key 获取地址：https://kimi.com 会员页面
+  第二步：双击 2-set-key.bat
+         粘贴你的 Kimi API Key
+         获取地址：https://kimi.com 会员页面
 
-  第三步：双击「3-启动.bat」
-         → Claude Code 启动，开始使用！
+  第三步：双击 3-start.bat
+         Claude Code 启动，开始使用！
 
 【日常使用】
 
-  每次使用只需双击「3-启动.bat」即可。
+  每次只需双击 3-start.bat
 
 【常见问题】
 
-  Q: 提示"npm 不是内部命令"？
-  A: 关闭终端窗口，重新打开再试。如果还不行，
-     重启电脑后再双击「1-安装.bat」。
+  Q: 提示 "npm 不是内部命令"？
+  A: 关闭窗口重新打开。不行就重启电脑后再运行 1-install.bat
 
   Q: 安装很慢？
-  A: 已使用国内镜像，耐心等待即可。
+  A: 已使用国内镜像，耐心等待
 
-  Q: 怎么更换 API Key？
-  A: 重新双击「2-设置密钥.bat」输入新的。
+  Q: 怎么换 API Key？
+  A: 重新运行 2-set-key.bat
 
   Q: 怎么更新 Claude Code？
-  A: 重新双击「1-安装.bat」即可覆盖更新。
+  A: 重新运行 1-install.bat
 
-  Q: winget 提示找不到？
-  A: 打开 Microsoft Store，搜索「应用安装程序」更新即可。
+  Q: winget 找不到？
+  A: Microsoft Store 搜索 "应用安装程序" 安装即可
 
 【基本用法】
 
-  启动后直接用中文对话，比如：
+  启动后直接用中文对话：
   > 帮我写一个 Python 计算器
-  > 读一下当前目录的代码，告诉我是做什么的
+  > 读一下当前目录的代码
   > 帮我修复这个 bug
 
   退出：输入 /exit 或按 Ctrl+C
